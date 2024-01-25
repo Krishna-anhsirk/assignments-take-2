@@ -39,11 +39,66 @@
 
   Testing the server - run `npm run test-todoServer` command in terminal
  */
-  const express = require('express');
-  const bodyParser = require('body-parser');
-  
-  const app = express();
-  
-  app.use(bodyParser.json());
-  
-  module.exports = app;
+const express = require("express");
+const bodyParser = require("body-parser");
+const { v4: uuidv4 } = require("uuid");
+
+const app = express();
+const port = 3000;
+
+let todos = [];
+
+app.use(bodyParser.json());
+
+app.get("/todos", (req, res) => {
+  return res.json(todos);
+});
+
+app.get("/todos/:id", (req, res) => {
+  const { id } = req.params;
+  for (const todo of todos) {
+    if (todo.id === parseInt(id)) return res.json(todo);
+  }
+  return res.sendStatus(404);
+});
+
+app.put("/todos/:id", (req, res) => {
+  const { id } = req.params;
+  const { title } = req.body;
+  const { description } = req.body;
+  for (const todo of todos) {
+    if (todo.id === parseInt(id)) {
+      todo.title = title;
+      todo.description = description;
+      return res.json(todo);
+    }
+  }
+  return res.sendStatus(404);
+});
+
+app.post("/todos", (req, res) => {
+  const todo = req.body;
+  const id = uuidv4();
+  todos.push({ id, ...todo });
+  return res.status(201).json({ id });
+});
+
+app.delete("/todos/:id", (req, res) => {
+  const { id } = req.params;
+  let foundAndDeleted = false;
+  todos = todos.filter((todo) => {
+    if (todo.id === parseInt(id)) {
+      foundAndDeleted = true;
+      return false;
+    }
+    return true;
+  });
+  if (foundAndDeleted) return res.sendStatus(200);
+  return res.sendStatus(404);
+});
+
+app.listen(port, () => {
+  console.log(`Listening on port ${port}...`);
+});
+
+module.exports = app;
